@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Anime Companion",
+    "slug": "anime-companion",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/logo/logo.png",
+    "splash": {
+      "image": "./src/assets/logo/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.animecompanion"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/logo/logo.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.anonymous.animecompanion"
+    },
+    "web": {
+      "favicon": "./src/assets/logo/logo.png"
+    },
+    "plugins": [],
+    "newArchEnabled": true
+  }
+}
