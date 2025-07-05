@@ -29,7 +29,18 @@ Anime Companion is a mobile application built with Expo that serves as a compreh
    - Create a Firebase project and enable Authentication.
    - Update the `src/config/firebase.ts` file with your Firebase configuration.
 
-5. Start the development server:
+5. Configure environment variables:
+   - The app uses a `.env` file for configuration.
+   - Make sure the following variables are set:
+     ```
+     # For local development (use your computer's IP address for mobile devices)
+     EXPO_PUBLIC_LOCAL_API_URL=http://10.0.2.2:3000
+     
+     # For production or when local server is unavailable
+     EXPO_PUBLIC_REMOTE_API_URL=https://your-production-server.com
+     ```
+
+6. Start the development server:
    ```
    npm start
    ```
@@ -39,6 +50,15 @@ Anime Companion is a mobile application built with Expo that serves as a compreh
 - Launch the app on your device or emulator.
 - Sign in or create a new account.
 - Explore the anime list, search for your favorite titles, and manage your profile.
+
+### Server Connectivity
+
+The app uses a smart server connection system:
+1. It first attempts to connect to your local development server (defined by `EXPO_PUBLIC_LOCAL_API_URL`).
+2. If the local server is unavailable, it falls back to the remote server (defined by `EXPO_PUBLIC_REMOTE_API_URL`).
+3. If neither server is available, the app will display an appropriate error message.
+
+This allows for seamless development and testing while ensuring the app works in production environments.
 
 ## Screenshots
 

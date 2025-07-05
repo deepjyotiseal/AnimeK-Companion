@@ -3,9 +3,9 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import axios from 'axios';
 
-// Define server URLs from environment variables with fallbacks
+// Define server URLs from environment variables
 const LOCAL_SERVER_URL = process.env.EXPO_PUBLIC_LOCAL_API_URL || 'http://localhost:3000';
-const REMOTE_SERVER_URL = process.env.EXPO_PUBLIC_REMOTE_API_URL || 'https://anime-companion-server.onrender.com';
+const REMOTE_SERVER_URL = process.env.EXPO_PUBLIC_REMOTE_API_URL;
 
 // Initially set API_URL to local, will be updated after server check
 let API_URL = LOCAL_SERVER_URL;
@@ -41,16 +41,20 @@ const checkServerHealth = async () => {
     }
   } catch (localError) {
     console.log('Local server not available, trying remote server...');
-    // If local server is not available, try the remote server
-    try {
-      const remoteResponse = await axios.get(`${REMOTE_SERVER_URL}`, { timeout: 5000 });
-      if (remoteResponse.status === 200) {
-        console.log('Remote server is available, using remote server URL');
-        API_URL = REMOTE_SERVER_URL;
-        return true;
+    // If local server is not available, try the remote server if URL is defined
+    if (REMOTE_SERVER_URL) {
+      try {
+        const remoteResponse = await axios.get(`${REMOTE_SERVER_URL}`, { timeout: 5000 });
+        if (remoteResponse.status === 200) {
+          console.log('Remote server is available, using remote server URL');
+          API_URL = REMOTE_SERVER_URL;
+          return true;
+        }
+      } catch (remoteError) {
+        console.error('Remote server health check failed:', remoteError);
       }
-    } catch (remoteError) {
-      console.error('Remote server health check failed:', remoteError);
+    } else {
+      console.log('Remote server URL not defined in environment variables');
     }
   }
   
@@ -65,7 +69,7 @@ const initializeFirebase = async () => {
     const isServerRunning = await checkServerHealth();
     
     if (!isServerRunning) {
-      throw new Error('No server is available. Please check your internet connection or start the local server and try again.');
+      throw new Error('No server is available. Please check your internet connection, start the local server, or ensure EXPO_PUBLIC_REMOTE_API_URL is properly set in your .env file.');
     }
     
     // If a server is running, proceed with Firebase initialization
