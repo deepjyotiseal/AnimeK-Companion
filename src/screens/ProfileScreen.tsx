@@ -22,18 +22,22 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getErrorMessage } from '../utils/errorHandlers';
 import { getUserSettings, toggleSearchHistory } from '../utils/userSettingsStorage';
+import { TextInput } from 'react-native';
 
 // Profile images are loaded dynamically using require()
 
 const ProfileScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { user, logout } = useAuth();
+  const { user, logout, deleteAccount } = useAuth();
   const { items } = useWatchlist();
   const { showToast, showDialog } = useNotification();
   const { theme, toggleTheme, isDarkMode, colors } = useTheme();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState('');
   const [searchHistoryEnabled, setSearchHistoryEnabled] = useState(true);
 
   const watchingCount = items.filter(item => item.status === 'Watching').length;
@@ -80,6 +84,40 @@ const ProfileScreen = () => {
         }
       },
     });
+  };
+
+  const handleDeleteAccount = async () => {
+    setShowDeleteAccountDialog(true);
+  };
+
+  const confirmDeleteAccount = async () => {
+    if (!user || !user.email) return;
+    
+    if (confirmEmail !== user.email) {
+      showToast({
+        message: 'Email does not match',
+        type: 'error',
+      });
+      return;
+    }
+
+    try {
+      setIsDeletingAccount(true);
+      await deleteAccount();
+      setShowDeleteAccountDialog(false);
+      showToast({
+        message: 'Your account has been permanently deleted',
+        type: 'success',
+      });
+    } catch (error) {
+      showToast({
+        message: getErrorMessage(error),
+        type: 'error',
+        duration: 4000,
+      });
+    } finally {
+      setIsDeletingAccount(false);
+    }
   };
 
   const StatCard = ({ title, value, iconName }: { title: string; value: number; iconName: keyof typeof Ionicons.glyphMap }) => (
@@ -185,6 +223,17 @@ const ProfileScreen = () => {
         Sign Out
       </Button>
 
+      <Button
+        variant="danger"
+        size="large"
+        onPress={handleDeleteAccount}
+        isLoading={isDeletingAccount}
+        iconName="trash-outline"
+        style={styles.deleteAccountButton}
+      >
+        Delete Account Permanently
+      </Button>
+
       <Text style={[styles.version, { color: colors.secondaryText }]}>Version 1.0.0</Text>
       
       {/* QR Code Modal */}
@@ -236,6 +285,71 @@ const ProfileScreen = () => {
         </View>
       </Modal>
       
+      {/* Delete Account Confirmation Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showDeleteAccountDialog}
+        onRequestClose={() => setShowDeleteAccountDialog(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Delete Account</Text>
+              <TouchableOpacity onPress={() => setShowDeleteAccountDialog(false)}>
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={[styles.deleteWarningText, { color: colors.danger || '#FF3B30' }]}>
+              Warning: This action cannot be undone!
+            </Text>
+            
+            <Text style={[styles.deleteAccountText, { color: colors.text }]}>
+              Your account and all associated data will be permanently deleted.
+            </Text>
+            
+            <Text style={[styles.confirmEmailText, { color: colors.secondaryText }]}>
+              To confirm, please enter your email: {user?.email}
+            </Text>
+            
+            <TextInput
+              style={[styles.emailInput, { borderColor: colors.border, color: colors.text }]}
+              value={confirmEmail}
+              onChangeText={setConfirmEmail}
+              placeholder="Enter your email"
+              placeholderTextColor={colors.secondaryText}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+            
+            <View style={styles.deleteButtonContainer}>
+              <TouchableOpacity 
+                style={[styles.cancelButton, { backgroundColor: colors.cardLight }]}
+                onPress={() => {
+                  setShowDeleteAccountDialog(false);
+                  setConfirmEmail('');
+                }}
+              >
+                <Text style={[styles.buttonText, { color: colors.text }]}>No, Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.deleteButton, { backgroundColor: colors.danger || '#FF3B30' }]}
+                onPress={confirmDeleteAccount}
+                disabled={isDeletingAccount}
+              >
+                {isDeletingAccount ? (
+                  <Text style={styles.buttonText}>Deleting...</Text>
+                ) : (
+                  <Text style={styles.buttonText}>Delete Permanently</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Settings Modal */}
       <Modal
         animationType="fade"
@@ -461,6 +575,57 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginBottom: 16,
+  },
+  deleteAccountButton: {
+    marginBottom: 16,
+  },
+  deleteWarningText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  deleteAccountText: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  confirmEmailText: {
+    fontSize: 14,
+    marginBottom: 12,
+    alignSelf: 'flex-start',
+  },
+  emailInput: {
+    width: '100%',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+    fontSize: 16,
+  },
+  deleteButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  cancelButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    marginRight: 8,
+    alignItems: 'center',
+  },
+  deleteButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    marginLeft: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   version: {
     textAlign: 'center',

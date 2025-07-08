@@ -16,6 +16,7 @@ interface ThemeContextType {
     card: string;
     border: string;
     primary: string;
+    danger: string;
     statusBar: 'dark-content' | 'light-content';
   };
 }
@@ -28,6 +29,7 @@ const defaultColors = {
     card: '#F5F5F5',
     border: '#F0F0F0',
     primary: '#FF0000',
+    danger: '#FF3B30',
     statusBar: 'dark-content' as const,
   },
   dark: {
@@ -37,6 +39,7 @@ const defaultColors = {
     card: '#1E1E1E',
     border: '#2C2C2C',
     primary: '#FF5252',
+    danger: '#FF453A',
     statusBar: 'light-content' as const,
   },
 };

@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-type ButtonVariant = 'solid' | 'outline' | 'ghost';
+type ButtonVariant = 'solid' | 'outline' | 'ghost' | 'danger';
 type ButtonSize = 'small' | 'medium' | 'large';
 
 interface ButtonProps {
@@ -50,6 +50,10 @@ export const Button: React.FC<ButtonProps> = ({
         return {
           backgroundColor: 'transparent',
         };
+      case 'danger':
+        return {
+          backgroundColor: '#FF3B30',
+        };
       default:
         return {
           backgroundColor: '#FF0000',
@@ -83,6 +87,7 @@ export const Button: React.FC<ButtonProps> = ({
       case 'outline':
       case 'ghost':
         return '#FF0000';
+      case 'danger':
       default:
         return '#FFFFFF';
     }

@@ -8,18 +8,35 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const LOCAL_SERVER_URL = process.env.EXPO_PUBLIC_LOCAL_API_URL || 'http://localhost:3000';
 const REMOTE_SERVER_URL = process.env.EXPO_PUBLIC_REMOTE_API_URL;
 
+// Check if local server URL is defined
+if (!LOCAL_SERVER_URL) {
+  console.warn('EXPO_PUBLIC_LOCAL_API_URL is not defined in .env file. Using default: http://localhost:3000');
+}
+
 // Initially set API_URL to local, will be updated after server check
 let API_URL = LOCAL_SERVER_URL;
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || "AIzaSyBMKGycMqWAajcK5WPLDgsUQ5Wj6KtOMZc",
-  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || "animeapp-68ff3.firebaseapp.com",
-  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || "animeapp-68ff3",
-  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || "animeapp-68ff3.firebasestorage.app",
-  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "745584220135",
-  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || "1:745584220135:web:caf693cd62c021e0a04f42"
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID
 };
+
+// Check if all required Firebase config values are present
+const missingConfigValues = Object.entries(firebaseConfig)
+  .filter(([_, value]) => !value)
+  .map(([key]) => key);
+
+if (missingConfigValues.length > 0) {
+  console.error(
+    `Missing required Firebase configuration values: ${missingConfigValues.join(', ')}\n` +
+    'Please check your .env file and ensure all EXPO_PUBLIC_FIREBASE_* variables are set.'
+  );
+}
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -73,14 +90,22 @@ const checkServerHealth = async () => {
 // Initialize Firebase asynchronously
 const initializeFirebase = async () => {
   try {
-    // First check if any server is running (local or remote)
+    // Check if Firebase configuration is valid
+    if (missingConfigValues.length > 0) {
+      throw new Error(
+        `Cannot initialize Firebase: Missing configuration values: ${missingConfigValues.join(', ')}\n` +
+        'Please check your .env file and ensure all EXPO_PUBLIC_FIREBASE_* variables are set.'
+      );
+    }
+    
+    // Check if any server is running (local or remote)
     const isServerRunning = await checkServerHealth();
     
     if (!isServerRunning) {
       throw new Error('No server is available. Please check your internet connection, start the local server, or ensure EXPO_PUBLIC_REMOTE_API_URL is properly set in your .env file.');
     }
     
-    // If a server is running, proceed with Firebase initialization
+    // If a server is running and config is valid, proceed with Firebase initialization
     console.log('Firebase initialized successfully with API URL:', API_URL);
     return { app, auth, db };
   } catch (error) {

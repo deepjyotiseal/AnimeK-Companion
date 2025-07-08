@@ -50,7 +50,7 @@ AnimeK Companion is a mobile application built with Expo that serves as a compre
      EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id_here
      EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id_here
      ```
-   - If Firebase environment variables are not provided, the app will use default values from `firebase.ts`.
+   - **IMPORTANT**: All Firebase environment variables are now required. The app will not initialize properly if these values are missing.
 
 6. Start the development server:
    ```

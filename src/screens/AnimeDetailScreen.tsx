@@ -107,13 +107,13 @@ const AnimeDetailScreen = () => {
         if (status === currentStatus) {
           await removeFromWatchlist(watchlistItem.id);
           showToast({
-            message: `Removed ${anime.title} from your watchlist`,
+            message: `Removed ${anime.title.english || anime.title.romaji} from your watchlist`,
             type: 'success',
           });
         } else {
           await updateWatchlistItem(watchlistItem.id, { status: status });
           showToast({
-            message: `Updated ${anime.title} to ${status}`,
+            message: `Updated ${anime.title.english || anime.title.romaji} to ${status}`,
             type: 'success',
           });
         }
@@ -125,7 +125,7 @@ const AnimeDetailScreen = () => {
           status
         );
         showToast({
-          message: `Added ${anime.title} to your ${status} list`,
+          message: `Added ${anime.title.english || anime.title.romaji} to your ${status} list`,
           type: 'success',
         });
       }

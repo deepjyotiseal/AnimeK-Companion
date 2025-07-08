@@ -6,6 +6,7 @@ import {
   onAuthStateChanged,
   updateProfile,
   sendPasswordResetEmail,
+  deleteUser,
   User
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
@@ -20,6 +21,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (displayName: string, photoURL?: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -127,6 +129,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const deleteAccount = async () => {
+    try {
+      if (!auth.currentUser) {
+        throw new Error('User not authenticated');
+      }
+      
+      // Get the user ID before deleting the account
+      const userId = auth.currentUser.uid;
+      
+      // Delete user data from Firestore first
+      try {
+        // Import callFirestore from firebaseApi
+        const { callFirestore } = await import('../api/firebaseApi');
+        
+        // First get all watchlist items
+        const watchlistItems = await callFirestore('get', `users/${userId}/watchlist`);
+        
+        // Delete each watchlist item individually
+        if (watchlistItems && Array.isArray(watchlistItems)) {
+          for (const item of watchlistItems) {
+            await callFirestore('delete', `users/${userId}/watchlist`, { document: item.id });
+          }
+        }
+        
+        // Delete the user document itself if it exists
+        try {
+          await callFirestore('delete', 'users', { document: userId });
+        } catch (userDocError) {
+          console.log('User document may not exist, continuing with deletion');
+        }
+        
+        console.log('User data deleted from Firestore');
+      } catch (firestoreError) {
+        console.error('Error deleting user data from Firestore:', firestoreError);
+        // Continue with account deletion even if Firestore deletion fails
+      }
+      
+      // Clear local user data
+      try {
+        const { clearLocalUserData } = await import('../utils/userDataCleanup');
+        await clearLocalUserData();
+      } catch (localDataError) {
+        console.error('Error clearing local user data:', localDataError);
+        // Continue with account deletion even if local data cleanup fails
+      }
+      
+      // Now delete the Firebase Auth user
+      await deleteUser(auth.currentUser);
+      setUser(null);
+    } catch (error) {
+      console.error('Account deletion error:', error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -137,6 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         resetPassword,
         updateUserProfile,
+        deleteAccount,
       }}
     >
       {children}

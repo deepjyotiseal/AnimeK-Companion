@@ -478,6 +478,13 @@ export const searchAnime = async (
     sortParam = [`${filters.sort}_${direction}`];
   }
 
+  // Log the filter values being sent to the API
+  console.log('Search filters:', {
+    format: filters?.format,
+    status: filters?.status,
+    sort: sortParam
+  });
+
   try {
     const response = await axios.post<AniListResponse>(
       ANILIST_API_URL,

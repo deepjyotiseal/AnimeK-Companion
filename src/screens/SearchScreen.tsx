@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -136,7 +136,18 @@ const SearchScreen = () => {
     }
   };
 
-  const handleAnimePress = (animeId: number) => {
+  const handleAnimePress = async (animeId: number, animeTitle?: string) => {
+    // If animeTitle is provided, add it to search history
+    if (animeTitle && animeTitle.trim().length >= 3) {
+      const historyEnabled = await isSearchHistoryEnabled();
+      if (historyEnabled) {
+        await addToSearchHistory(animeTitle);
+        // Update local state after adding to storage
+        const history = await getSearchHistory();
+        setSearchHistory(history);
+      }
+    }
+    
     const status = getAnimeStatus(animeId);
     if (status) {
       navigation.navigate('Main' as any, { screen: 'Watchlist', params: { initialTab: status } });
@@ -153,7 +164,7 @@ const SearchScreen = () => {
     >
       <TouchableOpacity
         style={styles.cardContent}
-        onPress={() => handleAnimePress(item.id)}
+        onPress={() => handleAnimePress(item.id, item.title.english || item.title.romaji)}
       >
         <Image
           source={{ uri: item.coverImage.medium }}
@@ -177,19 +188,37 @@ const SearchScreen = () => {
     </Animated.View>
   );
 
-  const FiltersModal = () => (
-    <Modal
-      visible={showFilters}
-      transparent
-      animationType="slide"
-      onRequestClose={() => setShowFilters(false)}
-    >
+  const handleCloseFilters = useCallback(() => {
+    setShowFilters(false);
+  }, []);
+  
+  const handleApplyFilters = useCallback(() => {
+    setShowFilters(false);
+    setPage(1);
+    refetch();
+  }, [refetch]);
+  
+  const handleResetFilters = useCallback(() => {
+    setFilters({});
+    setPage(1);
+    refetch();
+  }, [refetch]);
+
+  const FiltersModal = useMemo(() => {
+    return () => (
+      <Modal
+        visible={showFilters}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={handleCloseFilters}
+      >
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Filters</Text>
             <TouchableOpacity
-              onPress={() => setShowFilters(false)}
+              onPress={handleCloseFilters}
               style={styles.closeButton}
             >
               <Ionicons name="close" size={24} color={colors.text} />
@@ -198,27 +227,33 @@ const SearchScreen = () => {
 
           <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Format</Text>
           <View style={styles.filterOptions}>
-            {['TV', 'MOVIE', 'OVA', 'SPECIAL', 'ONA'].map((format) => (
+            {[
+              { key: 'TV', label: 'TV' },
+              { key: 'MOVIE', label: 'Movie' },
+              { key: 'OVA', label: 'OVA' },
+              { key: 'SPECIAL', label: 'Special' },
+              { key: 'ONA', label: 'ONA' }
+            ].map(({ key, label }) => (
               <TouchableOpacity
-                key={format}
+                key={key}
                 style={[
                   styles.filterChip,
-                  filters.format === format && styles.filterChipActive,
+                  filters.format === key && styles.filterChipActive,
                 ]}
                 onPress={() =>
                   setFilters((prev) => ({
                     ...prev,
-                    format: prev.format === format ? undefined : (format as AnimeFormat),
+                    format: prev.format === key ? undefined : (key as AnimeFormat),
                   }))
                 }
               >
                 <Text
                   style={[
                     styles.filterChipText,
-                    filters.format === format && styles.filterChipTextActive,
+                    filters.format === key && styles.filterChipTextActive,
                   ]}
                 >
-                  {format}
+                  {label}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -299,20 +334,26 @@ const SearchScreen = () => {
             ))}
           </View>
 
-          <TouchableOpacity
-            style={[styles.resetButton, { backgroundColor: colors.primary }]}
-            onPress={() => {
-              setFilters({});
-              setPage(1);
-              refetch();
-            }}
-          >
-            <Text style={styles.resetButtonText}>Reset Filters</Text>
-          </TouchableOpacity>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.resetButton, { backgroundColor: colors.card }]}
+              onPress={handleResetFilters}
+            >
+              <Text style={styles.resetButtonText}>Reset Filters</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.applyButton, { backgroundColor: colors.primary }]}
+              onPress={handleApplyFilters}
+            >
+              <Text style={styles.applyButtonText}>Apply</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
-  );
+    );
+  }, [showFilters, colors, filters, handleCloseFilters, handleResetFilters, handleApplyFilters]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -576,6 +617,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   modalContent: {
     backgroundColor: '#fff',
@@ -583,6 +629,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 16,
     padding: 16,
     maxHeight: '80%',
+    position: 'relative',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -626,14 +673,33 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
   resetButton: {
     padding: 16,
     backgroundColor: '#f5f5f5',
     borderRadius: 8,
     alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
   },
   resetButtonText: {
     color: '#FF0000',
+    fontWeight: 'bold',
+  },
+  applyButton: {
+    padding: 16,
+    backgroundColor: '#FF0000',
+    borderRadius: 8,
+    alignItems: 'center',
+    flex: 1,
+    marginLeft: 8,
+  },
+  applyButtonText: {
+    color: '#FFFFFF',
     fontWeight: 'bold',
   },
 });
