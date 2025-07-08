@@ -12,6 +12,7 @@ import {
   Linking,
   Modal,
   Switch,
+  Clipboard,
 } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { useWatchlist } from '../hooks/useWatchlist';
@@ -194,12 +195,27 @@ const ProfileScreen = () => {
             
             <Text style={[styles.shareText, { color: colors.secondaryText }]}>Scan this QR code or use the link below to download the app</Text>
             
-            <TouchableOpacity 
-              style={[styles.linkButton, { backgroundColor: colors.primary }]}
-              onPress={() => Linking.openURL('https://drive.google.com/drive/folders/1036zB-50J95EKJ6WsCJiSg0buaLUQopr')}
-            >
-              <Text style={[styles.linkButtonText, { color: colors.buttonText }]}>Open Download Link</Text>
-            </TouchableOpacity>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity 
+                style={[styles.linkButton, { backgroundColor: colors.primary }]}
+                onPress={() => Linking.openURL('https://drive.google.com/drive/folders/1NDLw2VTa6A8Uvbh0vxnzfeoTeAMZAq9V')}
+              >
+                <Text style={[styles.linkButtonText, { color: colors.buttonText }]}>Open Download Link</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.linkButton, { backgroundColor: colors.cardLight, marginTop: 10 }]}
+                onPress={() => {
+                  Clipboard.setString('https://drive.google.com/drive/folders/1NDLw2VTa6A8Uvbh0vxnzfeoTeAMZAq9V');
+                  showToast({
+                    message: 'Link copied to clipboard!',
+                    type: 'success',
+                  });
+                }}
+              >
+                <Text style={[styles.linkButtonText, { color: colors.text }]}>Copy Link</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -309,12 +325,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: '#666',
   },
+  buttonContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
   linkButton: {
     backgroundColor: '#FF0000',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
     marginTop: 10,
+    width: '80%',
   },
   linkButtonText: {
     color: '#fff',

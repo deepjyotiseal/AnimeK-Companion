@@ -1,7 +1,8 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence, initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Define server URLs from environment variables
 const LOCAL_SERVER_URL = process.env.EXPO_PUBLIC_LOCAL_API_URL || 'http://localhost:3000';
@@ -12,17 +13,22 @@ let API_URL = LOCAL_SERVER_URL;
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBMKGycMqWAajcK5WPLDgsUQ5Wj6KtOMZc",
-  authDomain: "animeapp-68ff3.firebaseapp.com",
-  projectId: "animeapp-68ff3",
-  storageBucket: "animeapp-68ff3.firebasestorage.app",
-  messagingSenderId: "745584220135",
-  appId: "1:745584220135:web:caf693cd62c021e0a04f42"
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || "AIzaSyBMKGycMqWAajcK5WPLDgsUQ5Wj6KtOMZc",
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || "animeapp-68ff3.firebaseapp.com",
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || "animeapp-68ff3",
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || "animeapp-68ff3.firebasestorage.app",
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "745584220135",
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || "1:745584220135:web:caf693cd62c021e0a04f42"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+
+// Initialize Auth with React Native persistence
+const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage)
+});
+
 const db = getFirestore(app);
 
 /**
@@ -33,6 +39,7 @@ const checkServerHealth = async () => {
   try {
     // First try to connect to the local server
     console.log('Checking local server health...');
+    // Use a shorter timeout for the connection attempt
     const localResponse = await axios.get(`${LOCAL_SERVER_URL}`, { timeout: 3000 });
     if (localResponse.status === 200) {
       console.log('Local server is running, using local server URL');
@@ -44,7 +51,8 @@ const checkServerHealth = async () => {
     // If local server is not available, try the remote server if URL is defined
     if (REMOTE_SERVER_URL) {
       try {
-        const remoteResponse = await axios.get(`${REMOTE_SERVER_URL}`, { timeout: 5000 });
+        // Use a shorter timeout for the connection attempt
+        const remoteResponse = await axios.get(`${REMOTE_SERVER_URL}`, { timeout: 3000 });
         if (remoteResponse.status === 200) {
           console.log('Remote server is available, using remote server URL');
           API_URL = REMOTE_SERVER_URL;

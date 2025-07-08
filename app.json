@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Anime Companion",
-    "slug": "anime-companion",
+    "name": "AnimeK Companion",
+    "slug": "animek-companion",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./src/assets/logo/logo.png",
@@ -30,7 +30,15 @@
     "web": {
       "favicon": "./src/assets/logo/logo.png"
     },
-    "plugins": [],
-    "newArchEnabled": true
+    "plugins": [
+      "expo-secure-store"
+    ],
+    "newArchEnabled": true,
+    "extra": {
+      "eas": {
+        "projectId": "58303761-26ca-4b47-b425-e8e7401c16f6"
+      }
+    },
+    "owner": "deepjyotiseal"
   }
 }

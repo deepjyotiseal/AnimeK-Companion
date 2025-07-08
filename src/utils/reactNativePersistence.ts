@@ -1,34 +1,23 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Persistence } from 'firebase/auth';
 
-// Define interfaces to match Firebase auth expectations
-interface StorageInterface {
-  getItem: (key: string) => Promise<string | null>;
-  setItem: (key: string, value: string) => Promise<void>;
-  removeItem: (key: string) => Promise<void>;
-}
+/**
+ * This file is a wrapper for the official Firebase React Native persistence.
+ * It's kept for backward compatibility but now simply re-exports the official implementation.
+ * 
+ * For Firebase v11.6.0+, we need to use the official implementation from the firebase/auth package.
+ * The error "INTERNAL ASSERTION FAILED: Expected a class definition" occurs when using a custom
+ * implementation that doesn't match the expected class structure in Firebase v11+.
+ */
 
-interface PersistenceInterface {
-  type: 'LOCAL' | 'SESSION' | 'NONE';
-  _shouldAllowMigration?: boolean;
-  _get: (key: string) => Promise<string | null>;
-  _set: (key: string, value: string) => Promise<void>;
-  _remove: (key: string) => Promise<void>;
-}
+// Re-export the AsyncStorage instance for convenience
+export { AsyncStorage };
 
-// This is a custom implementation of getReactNativePersistence
-// based on the Firebase SDK source code for v10+
-export const getReactNativePersistence = (storage: StorageInterface): PersistenceInterface => {
-  return {
-    type: 'LOCAL',
-    _shouldAllowMigration: true,
-    _get: async (key: string) => {
-      return storage.getItem(key);
-    },
-    _set: async (key: string, value: string) => {
-      return storage.setItem(key, value);
-    },
-    _remove: async (key: string) => {
-      return storage.removeItem(key);
-    }
-  };
+// This is just a placeholder function that will be replaced by the import in firebase.ts
+export const getReactNativePersistence = () => {
+  console.warn(
+    'Custom getReactNativePersistence is deprecated. ' +
+    'Please use the official implementation from firebase/auth directly.'
+  );
+  return null;
 };

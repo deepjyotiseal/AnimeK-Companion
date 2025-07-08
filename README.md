@@ -1,6 +1,8 @@
-# Anime Companion
+# AnimeK Companion
 
-Anime Companion is a mobile application built with Expo that serves as a comprehensive tool for anime enthusiasts. The app allows users to explore a wide range of anime titles, manage their watchlists, and connect with other fans. 
+[App Download Link](https://drive.google.com/drive/folders/1NDLw2VTa6A8Uvbh0vxnzfeoTeAMZAq9V)
+
+AnimeK Companion is a mobile application built with Expo that serves as a comprehensive tool for anime enthusiasts. The app allows users to explore a wide range of anime titles, manage their watchlists, and connect with other fans. 
 
 ## Features
 
@@ -27,18 +29,28 @@ Anime Companion is a mobile application built with Expo that serves as a compreh
    ```
 4. Set up Firebase:
    - Create a Firebase project and enable Authentication.
-   - Update the `src/config/firebase.ts` file with your Firebase configuration.
+   - Copy the `.env.example` file to `.env` and update with your Firebase configuration.
 
 5. Configure environment variables:
    - The app uses a `.env` file for configuration.
    - Make sure the following variables are set:
      ```
+     # Server API URLs
      # For local development (use your computer's IP address for mobile devices)
      EXPO_PUBLIC_LOCAL_API_URL=http://10.0.2.2:3000
      
      # For production or when local server is unavailable
      EXPO_PUBLIC_REMOTE_API_URL=https://your-production-server.com
+     
+     # Firebase Configuration
+     EXPO_PUBLIC_FIREBASE_API_KEY=your_api_key_here
+     EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain_here
+     EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id_here
+     EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket_here
+     EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id_here
+     EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id_here
      ```
+   - If Firebase environment variables are not provided, the app will use default values from `firebase.ts`.
 
 6. Start the development server:
    ```
@@ -62,7 +74,7 @@ This allows for seamless development and testing while ensuring the app works in
 
 ## Screenshots
 
-Here are some screenshots showcasing the app's interface and features. The Anime Companion app provides a clean, intuitive user experience with a modern UI design that makes it easy to browse, search, and manage your anime collection:
+Here are some screenshots showcasing the app's interface and features. The AnimeK Companion app provides a clean, intuitive user experience with a modern UI design that makes it easy to browse, search, and manage your anime collection:
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center">
   <figure>
@@ -127,4 +139,4 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 
 ## License
 
-This project is licensed under the MIT License with Attribution Requirement. This means you are free to use, modify, and distribute the code, but you must give credit to the original authors by including the name "Anime Companion" and a link to the original repository in your project. See the LICENSE file for details.
+This project is licensed under the MIT License with Attribution Requirement. This means you are free to use, modify, and distribute the code, but you must give credit to the original authors by including the name "AnimeK Companion" and a link to the original repository in your project. See the LICENSE file for details.

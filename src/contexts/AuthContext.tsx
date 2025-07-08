@@ -27,11 +27,16 @@ export const AuthContext = createContext<AuthContextType>({} as AuthContextType)
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
+  // Initialize auth state listener
   useEffect(() => {
+    console.log('Setting up auth state listener');
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('Auth state changed:', user ? 'User logged in' : 'No user');
       setUser(user);
       setIsLoading(false);
+      setAuthInitialized(true);
     });
 
     return unsubscribe;
@@ -39,13 +44,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     try {
-      // Check if server is available before attempting login
-      const serverAvailable = await isServerAvailable();
-      if (!serverAvailable) {
-        throw new Error('Server is not available. Please ensure the local server is running.');
+      // Only check server availability if we're not already logged in
+      if (!auth.currentUser) {
+        const serverAvailable = await isServerAvailable();
+        if (!serverAvailable) {
+          throw new Error('Server is not available. Please check your internet connection and try again.');
+        }
       }
       
-      await signInWithEmailAndPassword(auth, email, password);
+      // Attempt to sign in
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      setUser(userCredential.user);
+      return userCredential.user;
     } catch (error) {
       console.error('Login error:', error);
       throw error;

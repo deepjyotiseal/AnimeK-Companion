@@ -7,10 +7,12 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { AppNavigator } from './navigation/AppNavigator';
 import { StatusBar, View, Text, Button, StyleSheet } from 'react-native';
 import LoadingSpinner from './components/LoadingSpinner';
-import { initializeFirebase } from './config/firebase';
+import { initializeFirebase, getApiUrl } from './config/firebase';
 import { checkForUpdates } from './services/updateService';
 import { UpdateDialog } from './components/UpdateDialog';
 import { useDonationDialog } from './hooks/useDonationDialog';
+import { wakeServer } from './utils/serverPreheater';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -56,11 +58,42 @@ const App = () => {
   const [error, setError] = useState<string | null>(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [serverVersion, setServerVersion] = useState('');
+  const [isPreheating, setIsPreheating] = useState(false);
+  const [preheatProgress, setPreheatProgress] = useState(1); // Start at attempt 1
 
   // Function to initialize Firebase and connect to server
   const initialize = async () => {
     try {
+      // Start preheating the server before Firebase initialization
+      setIsPreheating(true);
+      
+      // Get the remote server URL
+      const serverUrl = process.env.EXPO_PUBLIC_REMOTE_API_URL;
+      console.log('Connecting to server:', serverUrl);
+      
+      // Setup progress update callback for connection attempts
+      const updateProgress = (attempt: number) => {
+        setPreheatProgress(attempt);
+      };
+      
+      // Attempt to connect to the server with multiple retries
+      const preheatResult = await wakeServer(
+        serverUrl,
+        5,  // maxAttempts
+        10000, // delayMs - 10 seconds between attempts
+        updateProgress // progress callback
+      );
+      
+      console.log('Server connection result:', preheatResult);
+      
+      if (!preheatResult.success) {
+        throw new Error(preheatResult.message);
+      }
+      
+      // Initialize Firebase after server connection
       await initializeFirebase();
+      
+      setIsPreheating(false);
       setIsInitialized(true);
       
       // Check for updates after initialization
@@ -74,7 +107,8 @@ const App = () => {
       }
     } catch (err) {
       console.error('Failed to initialize Firebase:', err);
-      setError('Failed to connect to any server. Please check your internet connection or make sure the local server is running.');
+      setError('Failed to connect to any server.');
+      setIsPreheating(false);
     }
   };
 
@@ -95,7 +129,7 @@ const App = () => {
           {error}
         </Text>
         <Text style={styles.errorSubtext}>
-          The app requires either a local server or internet connection to the remote server.
+          Please check your internet connection.
         </Text>
         <View style={styles.buttonContainer}>
           <Button 
@@ -111,8 +145,12 @@ const App = () => {
   if (!isInitialized) {
     return (
       <View style={styles.loadingContainer}>
-        <LoadingSpinner size={80} color="#FF6347" />
-        <Text style={styles.loadingText}>Connecting to server...</Text>
+        <LoadingSpinner size={40} color="#FF6347" />
+        <Text style={styles.loadingText}>
+          {isPreheating 
+            ? `Connecting to server (Attempt ${preheatProgress}/5)...` 
+            : 'Initializing...'}
+        </Text>
       </View>
     );
   }
@@ -164,6 +202,7 @@ const App = () => {
   );
 };
 
+// Update the styles to include new elements
 const styles = StyleSheet.create({
   errorContainer: {
     flex: 1,

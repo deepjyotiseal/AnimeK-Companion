@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
-  "author": "Anime Companion",
+  "author": "AnimeK Companion",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -34,7 +34,8 @@
     "react-native-screens": "4.4.0",
     "expo-auth-session": "~6.0.3",
     "expo-crypto": "~14.0.2",
-    "expo-web-browser": "~14.0.2"
+    "expo-web-browser": "~14.0.2",
+    "expo-secure-store": "~14.0.1"
   },
   "devDependencies": {
     "@types/react": "18.3.12",

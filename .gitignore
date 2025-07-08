@@ -52,6 +52,7 @@ node_modules/
 
 # Optional eslint cache
 .eslintcache
+.expo
 
 # Optional REPL history
 .node_repl_history

@@ -9,9 +9,9 @@ const AboutScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>About Anime Companion</Text>
+      <Text style={styles.title}>About AnimeK Companion</Text>
       <Text style={styles.text}>
-        Anime Companion is your personal anime tracking companion. Keep track of your favorite anime, manage your watchlist, and discover new series.
+        AnimeK Companion is your personal anime tracking companion. Keep track of your favorite anime, manage your watchlist, and discover new series.
       </Text>
       <Text style={styles.subtitle}>Developer</Text>
       <Text style={styles.text}>Deepjyoti Seal</Text>

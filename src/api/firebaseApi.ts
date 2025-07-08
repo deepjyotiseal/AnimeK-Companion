@@ -7,6 +7,7 @@ import { auth, getApiUrl } from '../config/firebase';
  */
 export const isServerAvailable = async (): Promise<boolean> => {
   try {
+    // Use a shorter timeout for the connection attempt
     const response = await axios.get(`${getApiUrl()}`, { timeout: 3000 });
     return response.status === 200;
   } catch (error) {
@@ -21,6 +22,7 @@ export const isServerAvailable = async (): Promise<boolean> => {
  */
 export const getServerVersion = async (): Promise<string> => {
   try {
+    // Use a shorter timeout for the connection attempt
     const response = await axios.get(`${getApiUrl()}/version`, { timeout: 3000 });
     return response.data.version;
   } catch (error) {

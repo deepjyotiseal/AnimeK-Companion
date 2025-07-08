@@ -96,7 +96,7 @@ const Toast: React.FC<ToastProps> = ({
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 50,
+    top: 50,
     left: 20,
     right: 20,
     backgroundColor: '#333',

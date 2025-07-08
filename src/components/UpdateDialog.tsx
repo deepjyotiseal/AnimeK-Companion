@@ -7,7 +7,7 @@ interface UpdateDialogProps {
   serverVersion: string;
 }
 
-const UPDATE_URL = 'https://drive.google.com/drive/folders/1036zB-50J95EKJ6WsCJiSg0buaLUQopr';
+const UPDATE_URL = 'https://drive.google.com/drive/folders/1NDLw2VTa6A8Uvbh0vxnzfeoTeAMZAq9V';
 
 export const UpdateDialog: React.FC<UpdateDialogProps> = ({ 
   visible, 
