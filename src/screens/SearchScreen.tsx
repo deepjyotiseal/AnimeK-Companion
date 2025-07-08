@@ -22,6 +22,7 @@ import Animated, { FadeIn, Layout } from 'react-native-reanimated';
 import { useWatchlist } from '../hooks/useWatchlist';
 import { useTheme } from '../contexts/ThemeContext';
 import { getSearchHistory, addToSearchHistory, removeFromSearchHistory, clearSearchHistory } from '../utils/searchHistoryStorage';
+import { isSearchHistoryEnabled } from '../utils/userSettingsStorage';
 
 // AniList uses different format types and status values
 type AnimeFormat = 'TV' | 'TV_SHORT' | 'MOVIE' | 'SPECIAL' | 'OVA' | 'ONA' | 'MUSIC';
@@ -52,11 +53,16 @@ const SearchScreen = () => {
     enabled: searchQuery.length >= 3,
   });
 
-  // Load search history when component mounts
+  // Load search history when component mounts if enabled
   useEffect(() => {
     const loadSearchHistory = async () => {
-      const history = await getSearchHistory();
-      setSearchHistory(history);
+      const historyEnabled = await isSearchHistoryEnabled();
+      if (historyEnabled) {
+        const history = await getSearchHistory();
+        setSearchHistory(history);
+      } else {
+        setSearchHistory([]);
+      }
     };
     loadSearchHistory();
   }, []);
@@ -66,12 +72,7 @@ const SearchScreen = () => {
       // Don't convert to lowercase as AniList API handles case-insensitivity
       setSearchQuery(text);
       setPage(1);
-      if (text.trim().length >= 3) {
-        addToSearchHistory(text).then(() => {
-          // Update local state after adding to storage
-          getSearchHistory().then(setSearchHistory);
-        });
-      }
+      // We'll add to search history only when user submits the search, not while typing
     }, 500),
     []
   );
@@ -79,15 +80,44 @@ const SearchScreen = () => {
   const handleClearInput = () => {
     setInputValue('');
     setSearchQuery('');
-    setShowHistory(false);
+    // Keep showing search history when input is cleared
+    if (searchHistory.length > 0) {
+      setShowHistory(true);
+    }
   };
   
-  const handleHistoryItemPress = (item: string) => {
+  const handleHistoryItemPress = async (item: string) => {
     setInputValue(item);
     // Don't convert to lowercase as AniList API handles case-insensitivity
     setSearchQuery(item);
     setShowHistory(false);
     Keyboard.dismiss();
+    
+    // Add to search history when selecting from history if enabled
+    if (item.trim().length >= 3) {
+      const historyEnabled = await isSearchHistoryEnabled();
+      if (historyEnabled) {
+        await addToSearchHistory(item);
+        // Update local state after adding to storage
+        const history = await getSearchHistory();
+        setSearchHistory(history);
+      }
+    }
+  };
+  
+  const handleSearchSubmit = async () => {
+    // Add to search history only when user submits the search if enabled
+    if (inputValue.trim().length >= 3) {
+      const historyEnabled = await isSearchHistoryEnabled();
+      if (historyEnabled) {
+        await addToSearchHistory(inputValue);
+        // Update local state after adding to storage
+        const history = await getSearchHistory();
+        setSearchHistory(history);
+      }
+      setShowHistory(false);
+      Keyboard.dismiss();
+    }
   };
   
   const handleRemoveHistoryItem = async (item: string) => {
@@ -300,7 +330,13 @@ const SearchScreen = () => {
               setShowHistory(text.length > 0);
             }}
             returnKeyType="search"
-            onFocus={() => setShowHistory(inputValue.length > 0)}
+            onSubmitEditing={handleSearchSubmit}
+            onFocus={() => {
+              // Show search history when input is focused, regardless of whether there's text
+              if (searchHistory.length > 0) {
+                setShowHistory(true);
+              }
+            }}
           />
           {inputValue.length > 0 && (
             <TouchableOpacity onPress={handleClearInput} style={styles.clearButton}>

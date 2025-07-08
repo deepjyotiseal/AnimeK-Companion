@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNotification } from '../contexts/NotificationContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { getErrorMessage } from '../utils/errorHandlers';
+import { getUserSettings, toggleSearchHistory } from '../utils/userSettingsStorage';
 
 // Profile images are loaded dynamically using require()
 
@@ -33,10 +34,25 @@ const ProfileScreen = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [searchHistoryEnabled, setSearchHistoryEnabled] = useState(true);
 
   const watchingCount = items.filter(item => item.status === 'Watching').length;
   const completedCount = items.filter(item => item.status === 'Completed').length;
   const plannedCount = items.filter(item => item.status === 'Plan to Watch').length;
+
+  // Load user settings when component mounts
+  useEffect(() => {
+    const loadUserSettings = async () => {
+      const settings = await getUserSettings();
+      setSearchHistoryEnabled(settings.enableSearchHistory);
+    };
+    loadUserSettings();
+  }, []);
+
+  const handleToggleSearchHistory = async () => {
+    const newValue = await toggleSearchHistory();
+    setSearchHistoryEnabled(newValue);
+  };
 
   const handleLogout = async () => {
     showDialog({
@@ -252,6 +268,24 @@ const ProfileScreen = () => {
             
             <Text style={[styles.settingDescription, { color: colors.secondaryText }]}>
               {isDarkMode ? 'Switch to light theme' : 'Switch to dark theme'}
+            </Text>
+
+            <View style={[styles.settingItem, { marginTop: 20 }]}>
+              <View style={styles.settingLabelContainer}>
+                <Ionicons name="search-outline" size={24} color={colors.text} />
+                <Text style={[styles.settingLabel, { color: colors.text }]}>Search History</Text>
+              </View>
+              <Switch
+                trackColor={{ false: '#767577', true: colors.primary }}
+                thumbColor={searchHistoryEnabled ? '#ffffff' : '#f4f3f4'}
+                ios_backgroundColor="#3e3e3e"
+                onValueChange={handleToggleSearchHistory}
+                value={searchHistoryEnabled}
+              />
+            </View>
+            
+            <Text style={[styles.settingDescription, { color: colors.secondaryText }]}>
+              {searchHistoryEnabled ? 'Disable search history' : 'Enable search history'}
             </Text>
           </View>
         </View>

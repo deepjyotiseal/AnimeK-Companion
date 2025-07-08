@@ -17,6 +17,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useWatchlist } from '../hooks/useWatchlist';
+import { useWatchlistTabs } from '../hooks/useWatchlistTabs';
+import { useWatchlistActions } from '../hooks/useWatchlistActions';
 import { useNotification } from '../contexts/NotificationContext';
 import { WatchStatus, WatchlistItem } from '../contexts/WatchlistContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -40,10 +42,13 @@ const WATCH_STATUSES: WatchStatus[] = [
 const WatchlistScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute();
-  const { items, isLoading, updateWatchlistItem, removeFromWatchlist } = useWatchlist();
+  const { items, isLoading } = useWatchlist();
   const { showToast, showDialog } = useNotification();
+  // Use the custom hook for watchlist actions
+  const { handleAnimePress, handleStatusChange, handleRemove, handleProgressUpdate } = useWatchlistActions();
   const { colors } = useTheme();
-  const [activeTab, setActiveTab] = useState<WatchStatus>(
+  // Use the custom hook for tab management
+  const { activeTab, handleTabChange, updateActiveTab } = useWatchlistTabs(
     // @ts-ignore - route.params might exist
     route.params?.initialTab || 'Watching'
   );
@@ -57,15 +62,13 @@ const WatchlistScreen = () => {
     // @ts-ignore - route.params might exist
     if (route.params?.initialTab) {
       // @ts-ignore - route.params exists
-      setActiveTab(route.params.initialTab);
+      updateActiveTab(route.params.initialTab);
       // Clear the params to prevent unwanted tab switches
       navigation.setParams({ initialTab: undefined });
     }
-  }, [route.params]);
+  }, [route.params, updateActiveTab, navigation]);
   
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab as WatchStatus);
-  };
+  // Using handleTabChange from the custom hook
 
   const filteredItems = items.filter((item) => item.status === activeTab);
 
@@ -82,75 +85,14 @@ const WatchlistScreen = () => {
     }, 1000);
   }, [showToast]);
 
-  const handleAnimePress = (animeId: number) => {
-    navigation.navigate('AnimeDetail', { animeId });
-  };
-
-  const handleStatusChange = async (item: WatchlistItem, newStatus: WatchStatus) => {
-    try {
-      await updateWatchlistItem(item.id, { status: newStatus });
-      showDialog({
-        title: 'Status Updated',
-        message: `"${item.title}" moved to ${newStatus}`,
-        type: 'success',
-        confirmText: 'View Now',
-        cancelText: 'Stay Here',
-        onConfirm: () => setActiveTab(newStatus),
-      });
-    } catch (error) {
-      console.error('Error updating status:', error);
-      showToast({
-        message: 'Failed to update status',
-        type: 'error',
-        duration: 4000,
-      });
-    }
-  };
-
-  const handleRemove = async (item: WatchlistItem) => {
-    showDialog({
-      title: 'Remove Anime',
-      message: `Are you sure you want to remove "${item.title}" from your watchlist?`,
-      type: 'warning',
-      confirmText: 'Remove',
-      cancelText: 'Cancel',
-      onConfirm: async () => {
-        try {
-          await removeFromWatchlist(item.id);
-          showToast({
-            message: `"${item.title}" removed from watchlist`,
-            type: 'info',
-            duration: 3000,
-          });
-        } catch (error) {
-          console.error('Error removing item:', error);
-          showToast({
-            message: 'Failed to remove anime from watchlist',
-            type: 'error',
-          });
-        }
-      },
-    });
-  };
-
-  const handleProgressUpdate = async (item: WatchlistItem, increment: number) => {
-    try {
-      const newProgress = Math.max(0, item.progress + increment);
-      await updateWatchlistItem(item.id, { progress: newProgress });
-      showToast({
-        message: `Progress updated: ${item.title} - ${newProgress} episodes`,
-        type: 'success',
-        duration: 2000,
-      });
-    } catch (error) {
-      console.error('Error updating progress:', error);
-      showToast({
-        message: 'Failed to update progress',
-        type: 'error',
-        duration: 3000,
-      });
-    }
-  };
+  // Using action handlers from the useWatchlistActions hook
+  // We need to modify handleStatusChange to use our updateActiveTab function
+  const handleStatusChangeWithTabUpdate = useCallback(
+    (item: WatchlistItem, newStatus: WatchStatus) => {
+      handleStatusChange(item, newStatus, updateActiveTab);
+    },
+    [handleStatusChange, updateActiveTab]
+  );
 
   const openEpisodeModal = (item: WatchlistItem) => {
     setSelectedItem(item);
@@ -163,12 +105,10 @@ const WatchlistScreen = () => {
     
     try {
       const newProgress = Math.max(0, parseInt(episodeInput, 10) || 0);
-      await updateWatchlistItem(selectedItem.id, { progress: newProgress });
-      showToast({
-        message: `Progress updated: ${selectedItem.title} - ${newProgress} episodes`,
-        type: 'success',
-        duration: 2000,
-      });
+      // Calculate the difference between new and current progress
+      const progressDiff = newProgress - selectedItem.progress;
+      // Use handleProgressUpdate from useWatchlistActions hook
+      await handleProgressUpdate(selectedItem, progressDiff);
       setModalVisible(false);
     } catch (error) {
       console.error('Error updating progress:', error);
@@ -180,7 +120,7 @@ const WatchlistScreen = () => {
     }
   };
 
-  const renderWatchlistItem = (item: WatchlistItem) => (
+  const renderWatchlistItem = useCallback((item: WatchlistItem) => (
     <Animated.View
       entering={SlideInRight}
       exiting={FadeOut}
@@ -232,12 +172,12 @@ const WatchlistScreen = () => {
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => {
+            onPress={() =>{
               const currentIndex = WATCH_STATUSES.indexOf(item.status);
               // Calculate previous status (with wrap-around)
               const prevIndex = (currentIndex - 1 + WATCH_STATUSES.length) % WATCH_STATUSES.length;
               const prevStatus = WATCH_STATUSES[prevIndex];
-              handleStatusChange(item, prevStatus);
+              handleStatusChangeWithTabUpdate(item, prevStatus);
             }}
           >
             <Ionicons name="arrow-back-circle" size={24} color={colors.secondaryText} />
@@ -247,7 +187,7 @@ const WatchlistScreen = () => {
             onPress={() => {
               const currentIndex = WATCH_STATUSES.indexOf(item.status);
               const nextStatus = WATCH_STATUSES[(currentIndex + 1) % WATCH_STATUSES.length];
-              handleStatusChange(item, nextStatus);
+              handleStatusChangeWithTabUpdate(item, nextStatus);
             }}
           >
             <Ionicons name="arrow-forward-circle" size={24} color={colors.secondaryText} />
@@ -261,7 +201,7 @@ const WatchlistScreen = () => {
         </View>
       </TouchableOpacity>
     </Animated.View>
-  );
+  ), [colors, handleAnimePress, handleProgressUpdate, handleStatusChangeWithTabUpdate, handleRemove, openEpisodeModal, WATCH_STATUSES]);
 
   // Render the tab bar for the TabPager component
   const renderTabBar = ({ tabs, activeTab, onTabPress, tabBarRef, measureTab }: {
@@ -275,6 +215,8 @@ const WatchlistScreen = () => {
       ref={tabBarRef}
       horizontal
       showsHorizontalScrollIndicator={false}
+      scrollEnabled={true} /* Allow scrolling for tab selection but not swiping gestures */
+      directionalLockEnabled={true} /* Lock scrolling to horizontal direction only */
       style={[styles.tabsContainer, { borderBottomColor: colors.border }]}
     >
       {tabs.map((status) => (
@@ -328,6 +270,7 @@ const WatchlistScreen = () => {
     return (
       <ScrollView
         style={[styles.content, { backgroundColor: colors.background }]}
+        horizontal={false} /* Explicitly disable horizontal scrolling */
         refreshControl={
           <RefreshControl 
             refreshing={refreshing} 
