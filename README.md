@@ -1,10 +1,9 @@
-[App Download Link](https://drive.google.com/drive/folders/1NDLw2VTa6A8Uvbh0vxnzfeoTeAMZAq9V)
-
 Unlock the complete server‐powered experience—including full source code, server source code, real‑time sync, and advanced community features—by purchasing the full version: [Download Full Version](https://buymeacoffee.com/deepjyotiseal/extras)
 
 # AnimeK Companion
 
 AnimeK Companion is a mobile application built with Expo that serves as a comprehensive tool for anime enthusiasts. The app allows users to explore a wide range of anime titles, manage their watchlists, and connect with other fans. 
+Download App: [App Download Link](https://drive.google.com/drive/folders/1NDLw2VTa6A8Uvbh0vxnzfeoTeAMZAq9V)
 
 ## Features
 
