@@ -1,6 +1,6 @@
 [App Download Link](https://drive.google.com/drive/folders/1NDLw2VTa6A8Uvbh0vxnzfeoTeAMZAq9V)
-[Download Full Version](https://buymeacoffee.com/deepjyotiseal/extras)
-Unlock the complete server‐powered experience—including full source code, server source code, real‑time sync, and advanced community features—by purchasing the full version.
+
+Unlock the complete server‐powered experience—including full source code, server source code, real‑time sync, and advanced community features—by purchasing the full version:[Download Full Version](https://buymeacoffee.com/deepjyotiseal/extras)
 
 # AnimeK Companion
 
